@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>含糖飲料紀錄系統</title>
+  <style>
+    :root { --primary: #4a90e2; --bg: #f4f6f9; --card: #ffffff; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); margin: 0; padding: 20px; color: #333; }
+    .container { max-width: 900px; margin: 0 auto; }
+    .card { background: var(--card); border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    .header-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    h2, h3, h4 { margin-top: 0; color: var(--primary); }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; margin-bottom: 5px; font-weight: bold; }
+    input, select, textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+    button { background: var(--primary); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-size: 15px; }
+    button:hover { opacity: 0.9; }
+    .btn-danger { background: #dc3545; }
+    .btn-warning { background: #ffc107; color: #000; }
+    .btn-secondary { background: #6c757d; }
+    .badge-card { text-align: center; background: #e8f5e9; border: 2px dashed #4caf50; padding: 20px; border-radius: 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 15px; }
+    .stat-box { background: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid var(--primary); font-size: 14px; }
+    .stat-box b { font-size: 18px; color: #d9534f; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+    th { background-color: #f2f2f2; }
+    
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+    .modal-content { background: white; padding: 20px; border-radius: 12px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
+    
+    .hidden { display: none !important; }
+    @media (max-width: 600px) { table { display: block; overflow-x: auto; } }
+  </style>
+  <script src="config.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- 1. 登入區塊 -->
+  <div id="loginSection" class="card">
+    <h2>使用者登入</h2>
+    <div class="form-group">
+      <label>帳號</label>
+      <input type="text" id="loginUser" placeholder="請輸入帳號">
+    </div>
+    <div class="form-group">
+      <label>密碼</label>
+      <input type="password" id="loginPass" placeholder="請輸入密碼">
+    </div>
+    <button style="width:100%;" onclick="handleLogin()">登入系統</button>
+  </div>
+
+  <!-- 2. 主頁面區塊 -->
+  <div id="mainSection" class="hidden">
+    
+    <div class="header-bar">
+      <button class="btn-secondary" onclick="goHome()">🏠 回首頁（重新回答）</button>
+      <button class="btn-danger" onclick="logout()">登出</button>
+    </div>
+
+    <!-- 今日問答區 -->
+    <div id="questionCard" class="card">
+      <h3>今日問答：請問您今天是否有喝含糖飲料？</h3>
+      <div style="display: flex; gap: 10px;">
+        <button onclick="submitNoDrink()" style="background:#28a745; width:50%;">沒有喝（領取好棒徽章）</button>
+        <button onclick="showDrinkForm()" style="background:#dc3545; width:50%;">有喝（填寫紀錄）</button>
+      </div>
+    </div>
+
+    <!-- 獲得好棒徽章提示 -->
+    <div id="badgeCard" class="card badge-card hidden">
+      <h2>🎉 太棒了！獲得「好棒做得好徽章」一個！</h2>
+      <p>繼續保持健康生活習慣！</p>
+    </div>
+
+    <!-- 填寫紀錄表單 -->
+    <div id="drinkFormCard" class="card hidden">
+      <h3>新增飲料紀錄</h3>
+      <form id="drinkForm" onsubmit="handleFormSubmit(event)">
+        <div class="form-group"><label>日期</label><input type="date" id="fieldDate" required></div>
+        <div class="form-group"><label>飲料名稱</label><input type="text" id="fieldName" required placeholder="例如：珍珠奶茶"></div>
+        <div class="form-group">
+          <label>分類</label>
+          <select id="fieldCategory" required>
+            <option value="1.手搖飲">1.手搖飲</option>
+            <option value="2.鋁箔包">2.鋁箔包</option>
+            <option value="3.罐裝飲料">3.罐裝飲料</option>
+            <option value="0.">-</option>
+          </select>
+        </div>
+        <div class="form-group"><label>價格</label><input type="number" id="fieldPrice" required placeholder="0" min="0"></div>
+        <div class="form-group">
+          <label>來源</label>
+          <select id="fieldSource" required>
+            <option value="1.自己買的">1.自己買的</option>
+            <option value="2.他人贈送的">2.他人贈送的</option>
+            <option value="3.餐點附贈的">3.餐點附贈的</option>
+            <option value="4.之前喝剩的">4.之前喝剩的</option>
+            <option value="0.">-</option>
+          </select>
+        </div>
+        <div class="form-group"><label>容量 (ml)</label><input type="number" id="fieldCapacity" required placeholder="700" min="0"></div>
+        <div class="form-group">
+          <label>甜度</label>
+          <select id="fieldSweetness" required>
+            <option value="1">1分糖</option>
+            <option value="3">2.三分糖/微糖</option>
+            <option value="5">3.半糖</option>
+            <option value="7">4.七分糖/少糖</option>
+            <option value="10">5.全糖/固定甜度</option>
+            <option value="0.">-</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>好喝程度 (1~5分)</label>
+          <select id="fieldRating" required>
+            <option value="1">1:非常不滿意</option>
+            <option value="2">2:不滿意</option>
+            <option value="3" selected>3:普通</option>
+            <option value="4">4:滿意</option>
+            <option value="5">5:非常滿意</option>
+            <option value="0">-</option>
+          </select>
+        </div>
+        <div class="form-group"><label>評論 (最多30字)</label><textarea id="fieldComment" maxlength="30" rows="2"></textarea></div>
+        <button type="submit" style="width:100%;">提交紀錄</button>
+      </form>
+    </div>
+
+    <!-- 儀表板資訊 -->
+    <div class="card">
+      <h3>儀表板資訊</h3>
+      
+      <h4>今日統計</h4>
+      <div class="grid">
+        <div class="stat-box">喝含糖飲料總量：<br><b id="dashTodayMl">0</b> ml</div>
+        <div class="stat-box">今日飲料花費：<br><b id="dashTodayCost">0</b> 元</div>
+        <div class="stat-box">增加熱量：<br><b id="dashTodayCal">0</b> kcal</div>
+        <div class="stat-box">需走幾步才能消除：<br><b id="dashTodaySteps">0</b> 步</div>
+      </div>
+
+      <h4>本月統計</h4>
+      <div class="grid">
+        <div class="stat-box">本月獲得徽章：<br><b id="dashMonthBadge">0</b> 個</div>
+        <div class="stat-box">本月喝飲料數：<br><b id="dashMonthCups">0</b> 杯</div>
+        <div class="stat-box">本月飲料花費：<br><b id="dashMonthCost">0</b> 元</div>
+        <div class="stat-box">與上月相比增減：<br><b id="dashMonthDiff">0</b> 杯</div>
+      </div>
+
+      <h4>今年統計</h4>
+      <div class="grid">
+        <div class="stat-box">今年累積徽章：<br><b id="dashYearBadge">0</b> 個</div>
+        <div class="stat-box">今年喝飲料數：<br><b id="dashYearCups">0</b> 杯</div>
+        <div class="stat-box">今年飲料花費：<br><b id="dashYearCost">0</b> 元</div>
+        <div class="stat-box">與去年相比增減：<br><b id="dashYearDiff">0</b> 杯</div>
+      </div>
+    </div>
+
+    <!-- 詳細紀錄資料頁面 -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <h3 style="margin: 0;">詳細紀錄資料</h3>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <label style="margin: 0; font-size: 14px;">排序：</label>
+          <select id="sortOrder" onchange="renderRecordsTable()" style="width: auto; padding: 5px 10px; font-size: 14px;">
+            <option value="desc" selected>📅 日期：最新到最舊</option>
+            <option value="asc">📅 日期：最舊到最新</option>
+          </select>
+        </div>
+      </div>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>日期</th>
+            <th>飲料名稱</th>
+            <th>分類</th>
+            <th>來源</th>
+            <th>價格</th>
+            <th>容量</th>
+            <th>甜度</th>
+            <th>好喝</th>
+            <th>評論</th>
+            <th>熱量</th>
+            <th>徽章</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="recordsTableBody"></tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+<!-- 修改資料 Modal 彈窗 -->
+<div id="editModal" class="modal hidden">
+  <div class="modal-content">
+    <h3>修改紀錄資料</h3>
+    <form id="editForm" onsubmit="handleEditSubmit(event)">
+      <input type="hidden" id="editId">
+      <div class="form-group"><label>日期</label><input type="date" id="editDate" required></div>
+      <div class="form-group"><label>飲料名稱</label><input type="text" id="editName" required></div>
+      <div class="form-group">
+        <label>分類</label>
+        <select id="editCategory" required>
+          <option value="1.手搖飲">1.手搖飲</option>
+          <option value="2.鋁箔包">2.鋁箔包</option>
+          <option value="3.罐裝飲料">3.罐裝飲料</option>
+          <option value="0.-">-</option>
+        </select>
+      </div>
+      <div class="form-group"><label>價格</label><input type="number" id="editPrice" required></div>
+      <div class="form-group">
+        <label>來源</label>
+        <select id="editSource" required>
+          <option value="1.自己買的">1.自己買的</option>
+          <option value="2.他人贈送的">2.他人贈送的</option>
+          <option value="3.餐點附贈的">3.餐點附贈的</option>
+          <option value="4.之前喝剩的">4.之前喝剩的</option>
+          <option value="0">-</option>
+        </select>
+      </div>
+      <div class="form-group"><label>容量 (ml)</label><input type="number" id="editCapacity" required></div>
+      <div class="form-group">
+        <label>甜度</label>
+        <select id="editSweetness" required>
+          <option value="1">1.一分糖</option>
+          <option value="3">2.三分糖/微糖</option>
+          <option value="5">3.半糖</option>
+          <option value="7">4.七分糖/少糖</option>
+          <option value="10">5.全糖/固定甜度</option>
+          <option value="0">-</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>好喝程度</label>
+        <select id="editRating" required>
+          <option value="1">1:非常不滿意</option>
+          <option value="2">2:不滿意</option>
+          <option value="3">3:普通</option>
+          <option value="4">4:滿意</option>
+          <option value="5">5:非常滿意</option>
+          <option value="0">-</option>
+        </select>
+      </div>
+      <div class="form-group"><label>評論</label><textarea id="editComment" maxlength="30" rows="2"></textarea></div>
+      <div style="display:flex; gap:10px;">
+        <button type="submit" style="width:50%;">儲存修改</button>
+        <button type="button" class="btn-danger" style="width:50%;" onclick="closeEditModal()">取消</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  const GAS_URL = (typeof CONFIG !== 'undefined' && CONFIG.GAS_URL) ? CONFIG.GAS_URL : ""; 
+
+  document.getElementById('fieldDate').valueAsDate = new Date();
+  let currentRecords = [];
+  let currentUser = "";
+
+  async function hashPassword(str) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(str);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  async function callGAS(payload) {
+    if (!GAS_URL || GAS_URL.includes("YOUR_GAS_WEB_APP_URL_HERE")) {
+      alert("請先在 config.js 中設定您的 GAS_URL");
+      return null;
+    }
+    payload.username = currentUser;
+    try {
+      const res = await fetch(GAS_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload),
+        redirect: "follow"
+      });
+      const json = await res.json();
+      return json.data;
+    } catch (err) {
+      alert("連線失敗：" + err);
+      return null;
+    }
+  }
+
+  async function handleLogin() {
+    const u = document.getElementById('loginUser').value;
+    const p = document.getElementById('loginPass').value;
+    if(!u || !p) return alert("請輸入帳號與密碼");
+
+    const pHash = await hashPassword(p);
+    currentUser = u;
+    
+    const res = await callGAS({ action: 'login', username: u, passwordHash: pHash });
+    
+    if(res && res.success) {
+      document.getElementById('loginSection').classList.add('hidden');
+      document.getElementById('mainSection').classList.remove('hidden');
+      loadDashboard();
+      loadRecords();
+    } else {
+      currentUser = "";
+      alert("帳號或密碼錯誤");
+    }
+  }
+
+  function goHome() {
+    document.getElementById('questionCard').classList.remove('hidden');
+    document.getElementById('badgeCard').classList.add('hidden');
+    document.getElementById('drinkFormCard').classList.add('hidden');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function logout() {
+    currentUser = "";
+    document.getElementById('mainSection').classList.add('hidden');
+    document.getElementById('loginSection').classList.remove('hidden');
+    document.getElementById('loginUser').value = '';
+    document.getElementById('loginPass').value = '';
+  }
+
+  async function submitNoDrink() {
+    const today = new Date().toISOString().split('T')[0];
+    await callGAS({ action: 'addRecord', data: { hasDrink: false, date: today } });
+    document.getElementById('questionCard').classList.add('hidden');
+    document.getElementById('badgeCard').classList.remove('hidden');
+    loadDashboard();
+    loadRecords();
+  }
+
+  function showDrinkForm() {
+    document.getElementById('questionCard').classList.add('hidden');
+    document.getElementById('drinkFormCard').classList.remove('hidden');
+  }
+
+  async function handleFormSubmit(e) {
+    e.preventDefault();
+    const data = {
+      hasDrink: true,
+      date: document.getElementById('fieldDate').value,
+      name: document.getElementById('fieldName').value,
+      category: document.getElementById('fieldCategory').value,
+      price: document.getElementById('fieldPrice').value,
+      source: document.getElementById('fieldSource').value,
+      capacity: document.getElementById('fieldCapacity').value,
+      sweetness: document.getElementById('fieldSweetness').value,
+      rating: document.getElementById('fieldRating').value,
+      comment: document.getElementById('fieldComment').value
+    };
+    await callGAS({ action: 'addRecord', data: data });
+    alert("新增成功！");
+    document.getElementById('drinkFormCard').classList.add('hidden');
+    loadDashboard();
+    loadRecords();
+  }
+
+  async function loadDashboard() {
+    const data = await callGAS({ action: 'getDashboard' });
+    if(!data) return;
+
+    document.getElementById('dashTodayMl').innerText = data.today.ml;
+    document.getElementById('dashTodayCost').innerText = data.today.cost || 0;
+    document.getElementById('dashTodayCal').innerText = data.today.calories;
+    document.getElementById('dashTodaySteps').innerText = data.today.steps;
+
+    document.getElementById('dashMonthBadge').innerText = data.month.badge;
+    document.getElementById('dashMonthCups').innerText = data.month.cups;
+    document.getElementById('dashMonthCost').innerText = data.month.cost;
+    document.getElementById('dashMonthDiff').innerText = (data.month.diffMonthCups > 0 ? "+" : "") + data.month.diffMonthCups;
+
+    document.getElementById('dashYearBadge').innerText = data.year.badge;
+    document.getElementById('dashYearCups').innerText = data.year.cups;
+    document.getElementById('dashYearCost').innerText = data.year.cost;
+    document.getElementById('dashYearDiff').innerText = (data.year.diffYearCups > 0 ? "+" : "") + data.year.diffYearCups;
+  }
+
+  async function loadRecords() {
+    const list = await callGAS({ action: 'getRecords' });
+    currentRecords = list || [];
+    renderRecordsTable();
+  }
+
+  function renderRecordsTable() {
+    const sortOrder = document.getElementById('sortOrder').value;
+    const tbody = document.getElementById('recordsTableBody');
+    tbody.innerHTML = '';
+
+    if (!currentRecords || currentRecords.length === 0) return;
+
+    const sortedList = [...currentRecords].sort((a, b) => {
+      const dateA = new Date(a.date).getTime() || 0;
+      const dateB = new Date(b.date).getTime() || 0;
+      return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
+
+    sortedList.forEach(item => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${item.date}</td>
+        <td>${item.name}</td>
+        <td>${item.category}</td>
+        <td>${item.source}</td>
+        <td>${item.price}</td>
+        <td>${item.capacity}</td>
+        <td>${item.sweetness}</td>
+        <td>${item.rating}</td>
+        <td>${item.comment}</td>
+        <td>${item.calories}</td>
+        <td>${item.badge}</td>
+        <td>
+          <button class="btn-warning" style="padding:2px 6px; font-size:12px;" onclick="openEditModal('${item.id}')">修改</button>
+          <button class="btn-danger" style="padding:2px 6px; font-size:12px;" onclick="deleteRecord('${item.id}')">刪除</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function openEditModal(id) {
+    const item = currentRecords.find(r => r.id === id);
+    if (!item) return;
+
+    document.getElementById('editId').value = item.id;
+    document.getElementById('editDate').value = item.date;
+    document.getElementById('editName').value = item.name;
+    document.getElementById('editCategory').value = item.category;
+    document.getElementById('editPrice').value = item.price;
+    document.getElementById('editSource').value = item.source;
+    document.getElementById('editCapacity').value = item.capacity;
+    document.getElementById('editSweetness').value = item.sweetness;
+    document.getElementById('editRating').value = item.rating;
+    document.getElementById('editComment').value = item.comment;
+
+    document.getElementById('editModal').classList.remove('hidden');
+  }
+
+  function closeEditModal() {
+    document.getElementById('editModal').classList.add('hidden');
+  }
+
+  async function handleEditSubmit(e) {
+    e.preventDefault();
+    const id = document.getElementById('editId').value;
+    const data = {
+      date: document.getElementById('editDate').value,
+      name: document.getElementById('editName').value,
+      category: document.getElementById('editCategory').value,
+      price: document.getElementById('editPrice').value,
+      source: document.getElementById('editSource').value,
+      capacity: document.getElementById('editCapacity').value,
+      sweetness: document.getElementById('editSweetness').value,
+      rating: document.getElementById('editRating').value,
+      comment: document.getElementById('editComment').value
+    };
+
+    await callGAS({ action: 'updateRecord', id: id, data: data });
+    alert("修改成功！");
+    closeEditModal();
+    loadDashboard();
+    loadRecords();
+  }
+
+  async function deleteRecord(id) {
+    if(confirm("確定要刪除這筆紀錄嗎？")) {
+      await callGAS({ action: 'deleteRecord', id: id });
+      loadDashboard();
+      loadRecords();
+    }
+  }
+</script>
+
+</body>
+</html>
