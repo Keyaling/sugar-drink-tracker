@@ -2,9 +2,9 @@
 
 基於 RWD 響應式前端、Google Apps Script (GAS) Serverless 後端與 Google Sheets 資料庫打造的全棧健康管理網頁應用程式。
 
-👉 **[線上展示連結 (Live Demo)](https://您的GitHub帳號.github.io/您的儲存庫名稱/)**  
+👉 **[線上展示連結 (Live Demo)]()**  
 *(測試帳號：`admin` / 測試密碼：`123456`)*
-
+https://keyaling.github.io/sugar-drink-tracker/
 ---
 
 ## 📌 專案動機與背景
@@ -39,9 +39,3 @@
 4. **設定檔分離**：採用 `config.js` 抽離 API 網址，並提供 `config.example.js` 作為開源部署範本。
 
 ---
-
-## 🚀 本地開發與部署說明 (Setup & Deployment)
-
-1. **Fork / Clone 本專案**：
-   ```bash
-   git clone [https://github.com/您的GitHub帳號/您的儲存庫名稱.git](https://github.com/您的GitHub帳號/您的儲存庫名稱.git)
