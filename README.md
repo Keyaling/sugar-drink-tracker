@@ -1,4 +1,4 @@
-# 🥤 含糖飲料習慣紀錄與健康統計系統 (Sugar Drink Tracker)
+# 🥤含糖飲料習慣紀錄與健康統計系統(Sugar Drink Tracker)
 
 基於 RWD 響應式前端、Google Apps Script (GAS) Serverless 後端與 Google Sheets 資料庫打造的全棧健康管理網頁應用程式。
 
