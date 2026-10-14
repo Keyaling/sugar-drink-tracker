@@ -36,6 +36,5 @@ https://keyaling.github.io/sugar-drink-tracker/
 1. **靜態金鑰與 ID 抽離**：後端採用 `SpreadsheetApp.getActiveSpreadsheet()` 動態綁定，避免在公開原始碼中暴露 Google 雲端硬碟敏感目錄或試算表 ID。
 2. **端到端雜湊防護 (End-to-End Hashing)**：登入機制採用前端 SHA-256 密碼加密，資料庫僅存放雜湊值，防範明文洩漏風險。
 3. **CORS 與通訊協定**：後端以 ContentService 配合自訂 JSON 通訊協定封裝，解決跨域請求限制並強化日期格式與資料結構的相容性防護。
-4. **設定檔分離**：採用 `config.js` 抽離 API 網址，並提供 `config.example.js` 作為開源部署範本。
 
 ---
