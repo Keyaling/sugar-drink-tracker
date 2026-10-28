@@ -23,7 +23,7 @@ https://keyaling.github.io/sugar-drink-tracker/
 
 ---
 
-## 🛠 系統架構與技術棧
+## 🛠 系統架構與技術
 - **前端 (Frontend)**：HTML5, CSS3 (Flexbox/Grid, RWD), Vanilla JavaScript (ES6+ async/await, Fetch API, Crypto API)
 - **後端 (Backend)**：Google Apps Script (GAS Serverless Web App API)
 - **資料庫 (Database)**：Google Sheets (分離 `User` 驗證表與 `Records` 紀錄表)
